@@ -89,6 +89,7 @@ def UserCreateNet(train_model, test_model):
 def UserRunNet(N, train_model, test_model, train_iters, test_iters):
     for i in range(train_iters):
         workspace.RunNet(train_model.net)
+    # print(workspace.FetchBlob("conv1"))
 
     test_accuracy = np.zeros(test_iters)
     for i in range(test_iters):
@@ -110,9 +111,9 @@ test_model = model_helper.ModelHelper(
 
 UserCreateNet(train_model, test_model)
 
-N = 100
+N = 1000
 for i in range(N):
-    UserRunNet(i, train_model, test_model, 100, 1)
+    UserRunNet(i, train_model, test_model, 1000, 1)
 
 
 #pyplot.plot(loss, 'b')
