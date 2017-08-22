@@ -1,6 +1,7 @@
 from matplotlib import pyplot
 import numpy as np
 from caffe2.python import model_helper, workspace, brew, core
+from caffe2.proto import caffe2_pb2
 
 print("LeNet\n")
 
@@ -55,6 +56,7 @@ def AddTrainNet(model, softmax, label):
 
     for param in model.params:
         param_grad = model.param_to_grad[param]
+        model.WeightedSum([param, ONE, param_grad, LR], param)
 
 
 def UserCreateNet(train_model, test_model):
@@ -87,22 +89,28 @@ def UserCreateNet(train_model, test_model):
 
 
 def UserRunNet(N, train_model, test_model, train_iters, test_iters):
+    test_accuracy = np.zeros(train_iters)
     for i in range(train_iters):
         workspace.RunNet(train_model.net)
+        test_accuracy[i] = workspace.FetchBlob("accuracy")
     # print(workspace.FetchBlob("conv1"))
 
+    #workspace.CreateNet(test_model.net, overwrite=True)
     test_accuracy = np.zeros(test_iters)
     for i in range(test_iters):
-        workspace.RunNet(test_model.net.Proto().name)
+        workspace.RunNet(test_model.net)
         test_accuracy[i] = workspace.FetchBlob("accuracy")
 
-    print(test_accuracy)
+#    print(test_accuracy)
     print("ITER INDEX: {}\t\t\ttest_accuracy={}\n".format(N, test_accuracy.mean()))
 
+#device_opts = core.DeviceOption(caffe2_pb2.CUDA, 1)
+print(workspace.has_gpu_support)
 
 train_model = model_helper.ModelHelper(
             name="mnist_train",
-            arg_scope={"order": "NCHW"})
+            arg_scope={"order": "NCHW"},
+            init_params=True)
 
 test_model = model_helper.ModelHelper(
             name="mnist_test",
@@ -113,7 +121,7 @@ UserCreateNet(train_model, test_model)
 
 N = 1000
 for i in range(N):
-    UserRunNet(i, train_model, test_model, 1000, 1)
+    UserRunNet(i, train_model, test_model, 10, 100)
 
 
 #pyplot.plot(loss, 'b')
